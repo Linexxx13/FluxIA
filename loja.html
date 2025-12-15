@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FluxIA Store - Catálogo</title>
+    
+    <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root { 
+            --bg-body: #050a14; 
+            --bg-card: #16213e; 
+            --primary: #00F8A5; 
+            --text: #fff;
+            --header-bg: rgba(5, 10, 20, 0.9); 
+        }
+
+        /* Reset de Links para evitar o roxo (visited) */
+        * { box-sizing: border-box; margin: 0; padding: 0; text-decoration: none !important; }
+        
+        a, a:visited, a:active { color: inherit; }
+
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            background: var(--bg-body); 
+            color: var(--text); 
+            padding-bottom: 80px; 
+            padding-top: 100px; 
+        }
+
+        /* --- HEADER GLOBAL --- */
+        header { 
+            background: var(--header-bg); 
+            padding: 15px 5%; 
+            position: fixed; 
+            top: 0; 
+            width: 100%;
+            z-index: 1000; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+            backdrop-filter: blur(10px); 
+        }
+        
+        .brand { 
+            color: var(--primary); 
+            font-family: 'Space Mono', monospace; 
+            font-size: 1.5rem; 
+            font-weight: bold; 
+        }
+
+        nav { display: flex; align-items: center; gap: 20px; }
+        nav a { 
+            color: var(--text) !important; 
+            font-weight: 500; 
+            font-size: 0.9rem; 
+            transition: 0.3s; 
+        }
+        nav a:hover { color: var(--primary) !important; }
+
+        /* Perfil Dropdown */
+        .profile-icon-container { position: relative; cursor: pointer; margin-left: 10px; }
+        .profile-icon { font-size: 28px; color: var(--primary); }
+        .profile-dropdown-menu {
+            position: absolute; top: 100%; right: 0; margin-top: 15px;
+            background-color: var(--bg-card); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px; min-width: 200px; padding: 15px; display: none;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 1001;
+        }
+        .profile-dropdown-menu.show { display: block; }
+        .profile-dropdown-menu h4 { color: var(--primary); font-size: 0.9rem; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
+        .profile-dropdown-menu a { display: block; padding: 8px 0; color: var(--text) !important; font-size: 0.85rem; }
+        .profile-dropdown-menu a:hover { color: var(--primary) !important; }
+
+        /* --- CONTEÚDO DA LOJA --- */
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        
+        .store-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 30px; 
+        }
+
+        /* Botão do Carrinho Original (Verde) */
+        .cart-btn { 
+            position: relative; 
+            cursor: pointer; 
+            font-size: 2rem; 
+            color: var(--primary); 
+            background: rgba(0, 248, 165, 0.1);
+            padding: 10px;
+            border-radius: 12px;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+        }
+        .cart-btn:hover { background: rgba(0, 248, 165, 0.2); transform: scale(1.05); }
+        .cart-badge { 
+            position: absolute; top: -2px; right: -2px; 
+            background: #fff; color: #000; 
+            font-size: 0.75rem; padding: 2px 7px; 
+            border-radius: 50%; font-weight: bold; 
+        }
+
+        /* Grid e Cards */
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 30px; }
+        .card { 
+            background: var(--bg-card); border-radius: 16px; overflow: hidden; 
+            border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; 
+            display: flex; flex-direction: column;
+        }
+        .card:hover { border-color: var(--primary); box-shadow: 0 10px 30px rgba(0, 248, 165, 0.1); }
+        .card-img-area { width: 100%; height: 220px; background: #0f172a; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .product-photo { width: 100%; height: 100%; object-fit: cover; transition: 0.5s; }
+        .card-body { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; }
+        .p-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 5px; color: var(--text); }
+        .p-cat { font-size: 0.8rem; color: var(--primary); text-transform: uppercase; margin-bottom: 10px; }
+        .p-price { font-size: 1.3rem; font-weight: 700; margin-top: auto; color: #fff; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">FluxIA</div>
+        <nav>
+            
+            <a href="Fluxiainicio.html">Início</a>
+            <a href="calcular rotas.html">Calcular Rota</a>
+            <a href="estoque.html">Sistema de Estoque</a>
+            <a href="loja.html">Loja</a>
+            <a href="contato.html">Contato</a>
+
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="store-header">
+            <h2>Catálogo de Produtos</h2>
+            <div class="cart-btn" onclick="window.location.href='carrinho.html'"> 
+                <i class="las la-shopping-bag"></i>
+                <span class="cart-badge" id="cart-count">0</span>
+            </div>
+        </div>
+
+        <div class="products-grid" id="grid">
+            <p>Carregando produtos...</p>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyD_U4aMQZLipqy8Ul9Pjdd6pqtXxY5om_s", 
+            authDomain: "fluxia-estoque.firebaseapp.com",
+            projectId: "fluxia-estoque",
+            storageBucket: "fluxia-estoque.firebasestorage.app",
+            messagingSenderId: "227345206289",
+            appId: "1:227345206289:web:87a932467401320e0935b0"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let inventory = [];
+
+        // Lógica do Menu de Perfil
+        document.addEventListener('DOMContentLoaded', () => {
+            const profileIconContainer = document.querySelector('.profile-icon-container');
+            const profileDropdownMenu = document.querySelector('.profile-dropdown-menu');
+
+            profileIconContainer.addEventListener('click', (event) => {
+                event.stopPropagation();
+                profileDropdownMenu.classList.toggle('show');
+            });
+
+            document.addEventListener('click', () => {
+                profileDropdownMenu.classList.remove('show');
+            });
+        });
+
+        function updateCartCount() {
+            const cart = JSON.parse(localStorage.getItem('fluxiaCart')) || [];
+            document.getElementById('cart-count').innerText = cart.reduce((a,b)=>a+b.qty,0);
+        }
+
+        db.collection("inventory").onSnapshot(snap => {
+            inventory = [];
+            snap.forEach(doc => inventory.push({ id: doc.id, ...doc.data() }));
+            render();
+            updateCartCount();
+        });
+
+        function render() {
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    
+    inventory.forEach(p => {
+        // REGRA: Se o estoque for 0 ou menor, não mostra na loja
+        if (p.quantity <= 0) return;
+
+        const imageHtml = p.imageUrl 
+            ? `<img src="${p.imageUrl}" class="product-photo" alt="${p.name}">`
+            : `<i class="las la-camera-retro no-photo-icon"></i>`;
+
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `
+            <a href="produto.html?id=${p.id}" style="display: contents;">
+                <div class="card-img-area">
+                    ${imageHtml}
+                    <div style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.7); padding:4px 8px; border-radius:5px; font-size:0.7rem; color:var(--primary);">
+                        ${p.quantity} disponíveis
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="p-cat">${p.category || 'Geral'}</div>
+                    <div class="p-title">${p.name}</div>
+                    <div class="p-price">R$ ${parseFloat(p.price||0).toFixed(2).replace('.', ',')}</div>
+                </div>
+            </a>
+        `;
+        grid.appendChild(div);
+    });
+}
+    </script>
+</body>
+</html>

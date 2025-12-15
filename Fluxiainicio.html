@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FluxIA - Início</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            /* Paleta de Cores: Verde e Branco */
+            --dark-bg: #010613;
+            --primary-color: #00F8A5;
+            /* Verde vibrante */
+            --secondary-color: #E6E6E6;
+            /* Cinza/branco suave */
+            --text-light: #F8F8F8;
+            --text-muted: #A0A0A0;
+            --card-bg: rgba(255, 255, 255, 0.08);
+            --header-bg: rgba(1, 6, 19, 0.8);
+            --main-bg-color: #0A192F;
+        }
+
+        /* Reset & Global Styles */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--main-bg-color);
+            color: var(--text-light);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Header & Navigation */
+        header {
+            background-color: var(--header-bg);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 50px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .logo {
+            font-family: 'Space Mono', monospace;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-decoration: none;
+            letter-spacing: 1px;
+            text-shadow: none;
+        }
+
+        nav {
+            display: flex;
+            gap: 20px;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: var(--text-light);
+            font-weight: 500;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+
+        nav a:hover {
+            color: var(--primary-color);
+            transform: translateY(-2px);
+            text-shadow: 0 0 5px var(--primary-color);
+        }
+
+        /* Ícone de Perfil e Menu */
+        .profile-icon-container {
+            position: relative;
+            cursor: pointer;
+            margin-left: 20px;
+        }
+
+        .profile-icon {
+            margin-top: 5px;
+            font-size: 34px;
+            color: var(--primary-color);
+            transition: all 0.3s ease;
+        }
+
+        .profile-icon:hover {
+            color: var(--secondary-color);
+            transform: scale(1.1);
+        }
+
+        .profile-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 10px;
+            background-color: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            min-width: 200px;
+            padding: 15px;
+            display: none;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: 100;
+        }
+
+        .profile-dropdown-menu.show {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .profile-dropdown-menu h4 {
+            font-family: 'Poppins', sans-serif;
+            color: var(--primary-color);
+            font-size: 1rem;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .profile-dropdown-menu a {
+            text-decoration: none;
+            color: var(--text-light);
+            display: block;
+            padding: 10px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            border-radius: 5px;
+        }
+
+        .profile-dropdown-menu a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--primary-color);
+        }
+
+        /* Hero Section com Imagem de Fundo */
+        .hero {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            background-image: url('imagemfundo.jpg');
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            animation: fadeIn 2s forwards;
+        }
+
+        .hero::before {
+            background: rgba(0, 0, 0, 0.6);
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .hero-title {
+            position: relative;
+            z-index: 2;
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(5rem, 13vw, 8rem);
+            font-weight: 700;
+            color: var(--primary-color);
+            text-shadow: none;
+            letter-spacing: 10px;
+            opacity: 0;
+            animation: slideInUp 1s ease-out 1s forwards;
+        }
+
+        /* Conteúdo principal - About Section */
+        .about-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 80px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .left-content {
+            flex: 1;
+            padding-right: 40px;
+            text-align: right;
+        }
+
+        .left-content h2 {
+            font-family: 'Space Mono', monospace;
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .left-content p {
+            font-size: 1rem;
+            color: var(--text-muted);
+            max-width: 400px;
+            margin-left: auto;
+        }
+
+        .divider {
+            width: 2px;
+            height: 250px;
+            background-color: var(--text-light);
+            margin: 0 40px;
+        }
+
+        .right-content {
+            flex: 1;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            padding-left: 40px;
+        }
+
+        .right-content img {
+            max-width: 400px;
+            height: auto;
+        }
+
+        /* Seção Carrossel */
+        .carousel-section {
+            padding: 100px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+            text-align: center;
+        }
+
+        .carousel-section h2 {
+            font-family: 'Space Mono', monospace;
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 90px;
+        }
+
+        .carousel-container {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .carousel-slide {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+        }
+
+        /* Chaveamento para transições suaves na navegação manual */
+        .carousel-slide.smooth-transition {
+            transition: transform 0.5s ease-in-out;
+        }
+
+        .carousel-item {
+            flex-shrink: 0;
+            /* Impede que os itens encolham */
+            width: calc(100% / 3);
+            /* Exibir 3 itens */
+            height: 450px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .carousel-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .carousel-item:hover img {
+            transform: scale(1.05);
+        }
+
+        .carousel-item-content {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: var(--text-light);
+            text-align: left;
+            padding: 15px 25px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            border-radius: 8px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .carousel-item:hover .carousel-item-content {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--text-light);
+            border: none;
+            cursor: pointer;
+            padding: 15px 10px;
+            z-index: 10;
+            font-size: 2rem;
+            transition: background 0.3s ease;
+        }
+
+        .carousel-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .prev-btn {
+            left: 20px;
+            border-radius: 5px;
+        }
+
+        .next-btn {
+            right: 20px;
+            border-radius: 5px;
+        }
+
+        /* Main Content Section - Flip Cards */
+        main {
+            padding: 80px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+            background-color: var(--main-bg-color);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+        }
+
+        /* Card Flip Effect */
+        .card-container {
+            perspective: 1000px;
+        }
+
+        .card-inner {
+            width: 100%;
+            height: 300px;
+            text-align: center;
+            transition: transform 1.2s;
+            transform-style: preserve-3d;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-container:hover .card-inner {
+            transform: rotateY(180deg);
+            box-shadow: 0 8px 30px rgba(0, 248, 165, 0.3);
+        }
+
+        .card-front,
+        .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: border 0.3s ease;
+        }
+
+        .card-container:hover .card-front {
+            border: 1px solid var(--primary-color);
+        }
+
+        .card-front {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(0, 248, 165, 0.05));
+        }
+
+        .card-front i {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(0, 248, 165, 0.5);
+        }
+
+        .card-back {
+            background: linear-gradient(135deg, rgba(0, 248, 165, 0.08), rgba(10, 25, 47, 0.05));
+            transform: rotateY(180deg);
+            text-align: left;
+            padding: 40px;
+        }
+
+        .card-back:hover {
+            border: 1px solid var(--secondary-color);
+        }
+
+        .card-front h2,
+        .card-back h2 {
+            font-family: 'Space Mono', monospace;
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+
+        .card-back p,
+        .card-back ul {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .card-back ul {
+            list-style: none;
+            margin-top: 10px;
+        }
+
+        .card-back li {
+            position: relative;
+            padding-left: 20px;
+            margin-bottom: 8px;
+        }
+
+        .card-back li::before {
+            content: "•";
+            color: var(--secondary-color);
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--dark-bg);
+            color: var(--text-muted);
+            padding: 50px 20px;
+            font-size: 0.9rem;
+            margin-top: auto;
+        }
+
+        .footer-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: flex-start;
+            max-width: 1200px;
+            margin: 0 auto;
+            gap: 40px;
+        }
+
+        .footer-logo,
+        .footer-links,
+        .footer-contact,
+        .footer-social {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .footer-logo .logo {
+            font-size: 28px;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .footer-links h4,
+        .footer-contact h4,
+        .footer-social h4 {
+            color: var(--text-light);
+            font-family: 'Space Mono', monospace;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            border-left: 3px solid var(--primary-color);
+            padding-left: 10px;
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 10px;
+        }
+
+        .footer-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .footer-contact p {
+            margin-bottom: 10px;
+        }
+
+        .footer-social a {
+            color: var(--text-light);
+            font-size: 1.5rem;
+            margin-right: 15px;
+            transition: color 0.3s ease, transform 0.3s ease;
+        }
+
+        .footer-social a:hover {
+            color: var(--primary-color);
+            transform: translateY(-3px);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+
+<body style="display:none">
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDjut1s0m_2fN5WUaQm6qCaIbHY22a4xrg",
+            authDomain: "ewbaross.firebaseapp.com",
+            projectId: "ewbaross",
+            storageBucket: "ewbaross.firebasestorage.app",
+            messagingSenderId: "959677459000",
+            appId: "1:959677459000:web:02422f84df27b18bdf94cd"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                // Se NÃO estiver logado, chuta para o index
+                window.location.href = "index.html";
+            } else {
+                // Se estiver logado, mostra a página
+                document.body.style.display = "block";
+            }
+        });
+    </script>
+    <header>
+        <a href="Fluxiainicio.html" class="logo">FluxIA</a>
+        <nav>
+            <a href="Fluxiainicio.html">Inicio</a>
+            <a href="calcular rotas.html">Calcular Rota</a>
+            <a href="estoque.html">Sistema de Estoque</a>
+            <a href="loja.html">Loja</a>
+            <a href="contato.html" class="contact-btn">Contato</a>
+        </nav>
+    </header>
+
+
+    <div class="hero">
+        <h1 class="hero-title">FluxIA</h1>
+    </div>
+
+    <div class="about-section">
+        <div class="left-content">
+            <h2>Bem-vindo à FluxIA</h2>
+            <p>
+                A FluxIA é uma solução inteligente para otimizar a logística, calcular rotas e gerenciar estoque com eficiência, oferecendo ferramentas baseadas em IA para melhorar a produtividade do seu negócio.
+            </p>
+        </div>
+        <div class="divider"></div>
+        <div class="right-content">
+            <img src="logofluxia.png" alt="logofluxia">
+        </div>
+    </div>
+
+    <main>
+        <div class="info-grid">
+            <div class="card-container">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <i class="fas fa-satellite-dish"></i>
+                        <h2>O que é o FluxIA?</h2>
+                    </div>
+                    <div class="card-back">
+                        <h2>O que é?</h2>
+                        <p>FluxIA é uma solução moderna que integra inteligência artificial à logística, melhorando decisões e produtividade. Nossa plataforma utiliza IA para otimizar operações e trazer eficiência para o seu negócio.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-container">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <i class="fas fa-boxes-stacked"></i>
+                        <h2>Funcionalidades</h2>
+                    </div>
+                    <div class="card-back">
+                        <h2>Funcionalidades</h2>
+                        <ul>
+                            <li>Cálculo de rotas inteligentes com mapas interativos.</li>
+                            <li>Controle e atualização em tempo real de estoque.</li>
+                            <li>Relatórios analíticos baseados em IA.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-container">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <i class="fas fa-chart-line"></i>
+                        <h2>Vantagens</h2>
+                    </div>
+                    <div class="card-back">
+                        <h2>Vantagens</h2>
+                        <p>Com o FluxIA, você reduz custos logísticos, melhora a experiência do cliente e toma decisões mais informadas com base em dados em tempo real. Ganhe uma vantagem competitiva no mercado.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <section class="carousel-section">
+        <h2>Nossas Soluções em Destaque</h2>
+        <div class="carousel-container">
+            <div class="carousel-slide">
+                <div class="carousel-item">
+                    <img src="Otimização de Rotas.jpg" alt="Otimização de Rotas">
+                    <div class="carousel-item-content">
+                        <h3>Otimização de Rotas</h3>
+                        <p>Reduza custos e tempo de entrega com nossas rotas inteligentes.</p>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <img src="Gestão de Estoque.jpg" alt="Gestão de Estoque">
+                    <div class="carousel-item-content">
+                        <h3>Gestão de Estoque</h3>
+                        <p>Mantenha seu estoque sempre atualizado e sob controle.</p>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <img src="Análise Inteligente.jpg" alt="Análise Inteligente">
+                    <div class="carousel-item-content">
+                        <h3>Análise Inteligente</h3>
+                        <p>Tome decisões melhores com relatórios e insights em tempo real.</p>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <img src="Previsão de Demanda.jpg" alt="Previsão de Demanda">
+                    <div class="carousel-item-content">
+                        <h3>Previsão de Demanda</h3>
+                        <p>Use IA para prever necessidades e evitar falta de produtos.</p>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <img src="Segurança de Dados.jpg" alt="Segurança de Dados">
+                    <div class="carousel-item-content">
+                        <h3>Segurança de Dados</h3>
+                        <p>Nossa plataforma garante a proteção das suas informações.</p>
+                    </div>
+                </div>
+            </div>
+            <button class="carousel-btn prev-btn">&#10094;</button>
+            <button class="carousel-btn next-btn">&#10095;</button>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">
+                <a href="#" class="logo">FluxIA</a>
+                <p>Otimizando sua logística com inteligência artificial.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Links Úteis</h4>
+                <ul>
+                    <li><a href="#">Início</a></li>
+                    <li><a href="calcular rotas.html">Calcular Rota</a></li>
+                    <li><a href="#">Sistema de Estoque</a></li>
+                    <li><a href="contato.html">Contato</a></li>
+                </ul>
+            </div>
+            <div class="footer-contact">
+                <h4>Contato</h4>
+                <p><i class="fas fa-map-marker-alt"></i> Rua da Inovação, 123 - São Paulo, SP</p>
+                <p><i class="fas fa-envelope"></i> contato@fluxia.com</p>
+                <p><i class="fas fa-phone-alt"></i> (11) 98765-4321</p>
+            </div>
+            <div class="footer-social">
+                <h4>Siga-nos</h4>
+                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © 2025 FluxIA. Todos os direitos reservados.
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const carouselSlide = document.querySelector(".carousel-slide");
+            const carouselItems = document.querySelectorAll(".carousel-item");
+            const prevBtn = document.querySelector(".prev-btn");
+            const nextBtn = document.querySelector(".next-btn");
+
+            let counter = 1;
+            const itemWidth = carouselItems[0].clientWidth;
+
+            // Clona os itens para criar o loop contínuo
+            const clones = [...carouselItems].map(item => item.cloneNode(true));
+            clones.forEach(clone => carouselSlide.appendChild(clone));
+
+            // Inicia o carrossel no segundo conjunto de itens para criar o loop
+            carouselSlide.style.transform = `translateX(${-itemWidth * counter}px)`;
+
+            let autoSlideInterval;
+
+            function startAutoSlide() {
+                autoSlideInterval = setInterval(() => {
+                    carouselSlide.classList.add('smooth-transition');
+                    counter++;
+                    carouselSlide.style.transform = `translateX(${-itemWidth * counter}px)`;
+
+                    // Reinicia a posição quando chega ao final dos itens originais
+                    if (counter >= carouselItems.length) {
+                        setTimeout(() => {
+                            carouselSlide.classList.remove('smooth-transition');
+                            counter = 0;
+                            carouselSlide.style.transform = `translateX(${-itemWidth * counter}px)`;
+                        }, 500); // tempo igual à transição do CSS
+                    }
+                }, 4000); // 4 segundos
+            }
+
+            function stopAutoSlide() {
+                clearInterval(autoSlideInterval);
+            }
+
+            // Inicia a rolagem automática
+            startAutoSlide();
+
+            // Eventos de clique para os botões
+            nextBtn.addEventListener("click", () => {
+                stopAutoSlide();
+                carouselSlide.classList.add('smooth-transition');
+                counter++;
+                carouselSlide.style.transform = `translateX(${-itemWidth * counter}px)`;
+                if (counter >= carouselItems.length) {
+                    setTimeout(() => {
+                        carouselSlide.classList.remove('smooth-transition');
+                        counter = 0;
+                        carouselSlide.style.transform = `translateX(${-itemWidth * counter}px)`;
+                    }, 500);
+                }
+                startAutoSlide();
+            });
+
+            prevBtn.addEventListener("click", () => {
+                stopAutoSlide();
+                carouselSlide.classList.add('smooth-transition');
+                if (counter <= 0) {
+                    carouselSlide.classList.remove('smooth-transition');
+                    counter = carouselItems.length;
+                    carouselSlide.style.transform = `translateX(${-itemWidth * counter}px)`;
+                }
+                setTimeout(() => {
+                    carouselSlide.classList.add('smooth-transition');
+                    counter--;
+                    carouselSlide.style.transform = `translateX(${-itemWidth * counter}px)`;
+                }, 10);
+                startAutoSlide();
+            });
+
+            // Lógica para o menu de perfil flutuante
+            const profileIconContainer = document.querySelector('.profile-icon-container');
+            const profileDropdownMenu = document.querySelector('.profile-dropdown-menu');
+
+            // Alterna a visibilidade do menu ao clicar no ícone
+            profileIconContainer.addEventListener('click', (event) => {
+                event.stopPropagation(); // Impede que o clique se propague para o documento
+                profileDropdownMenu.classList.toggle('show');
+            });
+
+            // Fecha o menu se o usuário clicar em qualquer lugar fora dele
+            document.addEventListener('click', (event) => {
+                if (!profileDropdownMenu.contains(event.target) && !profileIconContainer.contains(event.target)) {
+                    profileDropdownMenu.classList.remove('show');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

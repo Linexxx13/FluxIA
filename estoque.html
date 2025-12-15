@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FluxIA - Sistema de Estoque</title>
+    
+    <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+    <style>
+        /* --- ESTILOS DO SISTEMA (estoque.html) --- */
+        :root {
+            --primary-color: #00F8A5; 
+            --background-color: #0A192F; 
+            --surface-color: #1B2B47;
+            --text-light: #F8F8F8; 
+            --text-muted: #A0A0A0; 
+            --border-color: rgba(0, 248, 165, 0.2);
+            --danger-color: #e74c3c; 
+            --warning-color: #f39c12; 
+            --success-color: #2ecc71; 
+            --border-radius: 12px;
+            --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); 
+            --urgent-stock-bg: rgba(231, 76, 60, 0.1);
+            --low-stock-bg: rgba(243, 156, 18, 0.1);
+            
+            /* Variável adicional para o Header */
+            --header-bg: rgba(5, 10, 20, 0.9); 
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; text-decoration: none !important; }
+        
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: var(--background-color); 
+            color: var(--text-light); 
+            padding: 2rem; 
+            padding-top: 100px; /* Ajuste para o header fixo */
+        }
+
+        /* --- ESTILOS DO HEADER (loja.html) --- */
+        header.main-header { 
+            background: var(--header-bg); 
+            padding: 15px 5%; 
+            position: fixed; 
+            top: 0; 
+            left: 0;
+            width: 100%;
+            z-index: 1000; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+            backdrop-filter: blur(10px); 
+        }
+        
+        .brand { 
+            color: var(--primary-color); 
+            font-family: 'Space Mono', monospace; 
+            font-size: 1.5rem; 
+            font-weight: bold; 
+        }
+
+        nav { display: flex; align-items: center; gap: 20px; }
+        nav a { 
+            color: var(--text-light) !important; 
+            font-weight: 500; 
+            font-size: 0.9rem; 
+            transition: 0.3s; 
+        }
+        nav a:hover { color: var(--primary-color) !important; }
+
+        /* Perfil Dropdown */
+        .profile-icon-container { position: relative; cursor: pointer; margin-left: 10px; }
+        .profile-icon { font-size: 28px; color: var(--primary-color); }
+        .profile-dropdown-menu {
+            position: absolute; top: 100%; right: 0; margin-top: 15px;
+            background-color: var(--surface-color); border: 1px solid var(--border-color);
+            border-radius: 8px; min-width: 200px; padding: 15px; display: none;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 1001;
+        }
+        .profile-dropdown-menu.show { display: block; }
+        .profile-dropdown-menu h4 { color: var(--primary-color); font-size: 0.9rem; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
+        .profile-dropdown-menu a { display: block; padding: 8px 0; color: var(--text-light) !important; font-size: 0.85rem; }
+        .profile-dropdown-menu a:hover { color: var(--primary-color) !important; }
+
+        /* --- ESTILOS DE CONTEÚDO (estoque.html) --- */
+        .container { max-width: 1400px; margin: 0 auto; }
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .card { background-color: var(--surface-color); border: 1px solid var(--border-color); padding: 1.5rem; border-radius: var(--border-radius); box-shadow: var(--box-shadow); display: flex; align-items: center; gap: 1.5rem; }
+        
+        .card-icon { font-size: 3rem; padding: 0.8rem; border-radius: 50%; color: #0A192F; display: flex; align-items: center; justify-content: center; width: 80px; height: 80px;}
+        .card-icon.total-value { background-color: var(--primary-color); }
+        .card-icon.total-items { background-color: #367BF5; }
+        .card-icon.total-categories { background-color: var(--warning-color); }
+        
+        .card-info h3 { font-size: 2rem; font-weight: 600; color: var(--text-light); }
+        .card-info p { font-size: 0.9rem; color: var(--text-muted); }
+        .content-area { background-color: var(--surface-color); border: 1px solid var(--border-color); padding: 2rem; border-radius: var(--border-radius); box-shadow: var(--box-shadow); margin-bottom: 2rem; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1.5rem; }
+        #search-box { background-color: var(--background-color); color: var(--text-light); padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; width: 100%; max-width: 400px; }
+        .buttons-group { display: flex; gap: 1rem; flex-wrap: wrap; }
+        
+        .btn { color: #000; padding: 0.75rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; transition: transform 0.2s ease, box-shadow 0.3s ease; }
+        .btn i { font-size: 1.3rem; }
+        .btn:hover { transform: scale(1.05); box-shadow: 0 8px 20px rgba(0, 248, 165, 0.2); }
+        
+        #add-item-btn { background: linear-gradient(45deg, var(--primary-color), #00c785); }
+        #export-html-btn { background: #006894; color: white; }
+        #history-btn { background: #29CCC4; color: #0A192F; } 
+        #clear-history-btn { background: var(--danger-color); color: white; font-size: 0.9rem; padding: 0.5rem 1rem; }
+
+        .stock-legend { display: flex; gap: 1.5rem; margin-bottom: 1.5rem; padding: 1rem; background-color: rgba(10, 25, 47, 0.8); border-radius: 8px; border: 1px solid var(--border-color); }
+        .legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
+        .legend-color-box { width: 20px; height: 20px; border-radius: 4px; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { font-family: 'Space Mono', monospace; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; color: var(--text-muted); }
+        tr:nth-child(even) { background-color: rgba(27, 43, 71, 0.5); }
+        tr:hover { background-color: #2a3f5a; }
+        .low-stock { background-color: var(--low-stock-bg) !important; border-left: 4px solid var(--warning-color); }
+        .urgent-stock { background-color: var(--urgent-stock-bg) !important; border-left: 4px solid var(--danger-color); }
+        
+        .action-icons { display: flex; gap: 10px; align-items: center; }
+        .action-btn { background: none; border: none; cursor: pointer; font-size: 1.3em; transition: transform 0.2s; padding: 5px; }
+        .action-btn:hover { transform: scale(1.2); }
+        .btn-add { color: var(--success-color); }
+        .btn-remove { color: var(--warning-color); }
+        .btn-edit { color: #3498db; }
+        .btn-delete { color: var(--danger-color); }
+
+        .table-thumb { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; background: #000; border: 1px solid var(--border-color); vertical-align: middle; margin-right: 10px; }
+        .table-no-thumb { display: inline-flex; width: 40px; height: 40px; border-radius: 6px; background: rgba(255,255,255,0.05); align-items: center; justify-content: center; vertical-align: middle; margin-right: 10px; color: var(--text-muted); font-size: 1.2rem; }
+
+        .charts-container h2 { font-family: 'Space Mono', monospace; font-size: 1.5rem; color: var(--primary-color); margin-bottom: 1.5rem; }
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; align-items: start; }
+        .charts-grid h3 { text-align: center; color: var(--text-muted); margin-bottom: 1rem; font-size: 1rem; }
+        .charts-grid canvas { max-width: 100%; height: auto !important; background-color: rgba(27, 43, 71, 0.3); border-radius: 8px; padding: 10px; }
+
+        .modal { display: none; position: fixed; z-index: 1100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(5px); }
+        .modal-content { background-color: var(--surface-color); border: 1px solid var(--border-color); margin: 5% auto; padding: 2.5rem; width: 90%; max-width: 900px; border-radius: var(--border-radius); max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem; }
+        .modal-header h2 { font-family: 'Space Mono', monospace; color: var(--primary-color); margin: 0; font-size: 1.5rem; }
+        .close-btn { color: #aaa; font-size: 30px; font-weight: bold; cursor: pointer; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
+        .form-group input { width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; background-color: var(--background-color); color: var(--text-light); }
+        
+        .image-upload-wrapper { display: flex; align-items: center; gap: 15px; background: var(--background-color); padding: 10px; border: 1px dashed var(--border-color); border-radius: 8px; }
+        .btn-upload { background: transparent; border: 1px solid var(--primary-color); color: var(--primary-color); padding: 8px 15px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-weight: 600; }
+        .btn-upload:hover { background: rgba(0, 248, 165, 0.1); }
+        .preview-img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; display: none; border: 1px solid var(--primary-color); }
+
+        .modal-btn { width: 100%; padding: 0.8rem 1.5rem; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        .btn-save { background: var(--primary-color); color: #000; }
+        .btn-transaction-in { background-color: var(--success-color); color: #000; }
+        .btn-transaction-out { background-color: var(--warning-color); color: #000; }
+        .current-stock-display { text-align: center; margin-bottom: 1rem; color: var(--text-muted); font-size: 0.9rem; }
+        .current-stock-display span { color: var(--primary-color); font-weight: bold; font-size: 1.2rem; }
+
+        .history-tag { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+        .tag-in { background-color: rgba(46, 204, 113, 0.2); color: #2ecc71; border: 1px solid #2ecc71; }
+        .tag-out { background-color: rgba(243, 156, 18, 0.2); color: #f39c12; border: 1px solid #f39c12; }
+        .tag-new { background-color: rgba(52, 152, 219, 0.2); color: #3498db; border: 1px solid #3498db; }
+        .tag-del { background-color: rgba(231, 76, 60, 0.2); color: #e74c3c; border: 1px solid #e74c3c; }
+        .tag-edit { background-color: rgba(155, 89, 182, 0.2); color: #af7ac5; border: 1px solid #af7ac5; }
+        .history-date { color: #A0A0A0; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="brand">FluxIA</div>
+        <nav>
+            
+            <a href="Fluxiainicio.html">Início</a>
+            <a href="calcular rotas.html">Calcular Rota</a>
+            <a href="estoque.html">Sistema de Estoque</a>
+            <a href="loja.html">Loja</a>
+            <a href="contato.html">Contato</a>
+
+        </nav>
+    </header>
+
+    <div class="container">
+        <header style="display: none;">
+            <img src="https://img.icons8.com/fluency/96/management.png" alt="Gestão de Estoque" class="logo-icon">
+            <h1>FluxIA Estoque</h1>
+        </header>
+
+        <div class="dashboard">
+             <div class="card">
+                 <div class="card-icon total-value"><i class="las la-hand-holding-usd"></i></div>
+                 <div class="card-info"><h3 id="total-value">R$ 0,00</h3><p>Valor Total em Estoque</p></div>
+             </div>
+            <div class="card">
+                <div class="card-icon total-items"><i class="las la-boxes"></i></div>
+                <div class="card-info"><h3 id="total-items">0</h3><p>Total de Itens</p></div>
+            </div>
+            <div class="card">
+                <div class="card-icon total-categories"><i class="las la-tags"></i></div>
+                <div class="card-info"><h3 id="total-categories">0</h3><p>Categorias Únicas</p></div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="toolbar">
+                <input type="search" id="search-box" placeholder="🔎 Buscar por ID, produto, categoria...">
+                <div class="buttons-group">
+                    <button id="history-btn" class="btn"><i class="las la-history"></i> Histórico</button>
+                    <button id="export-html-btn" class="btn"><i class="las la-file-alt"></i> Relatório Web</button>
+                    <button id="add-item-btn" class="btn"><i class="las la-plus"></i> Novo Item</button>
+                </div>
+            </div>
+            <div class="stock-legend">
+                <div class="legend-item">
+                    <div class="legend-color-box" style="background-color: var(--low-stock-bg); border: 1px solid var(--warning-color);"></div>
+                    <span>Estoque Baixo (5)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color-box" style="background-color: var(--urgent-stock-bg); border: 1px solid var(--danger-color);"></div>
+                    <span>Reposição Urgente (1)</span>
+                </div>
+            </div>
+            <table> <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Produto</th>
+                        <th>Categoria</th>
+                        <th>Quantidade</th>
+                        <th>Preço Unit.</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="inventory-list"></tbody>
+            </table>
+        </div>
+        
+        <div class="content-area charts-container"> <h2>Análise Gráfica do Estoque</h2>
+            <div class="charts-grid">
+                <div><canvas id="quantityByCategoryChart"></canvas></div>
+                <div><canvas id="valueByCategoryChart"></canvas></div>
+                <div><canvas id="itemDistributionChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="item-modal" class="modal"> 
+        <div class="modal-content">
+            <div class="modal-header"><h2 id="modal-title">Adicionar Novo Item</h2><span class="close-btn" onclick="document.getElementById('item-modal').style.display='none'">&times;</span></div>
+            <form id="item-form">
+                <input type="hidden" id="edit-id">
+                <div class="form-group"><label for="product-name">Nome do Produto</label><input type="text" id="product-name" required></div>
+                <div class="form-group"><label for="category">Categoria</label><input type="text" id="category" required></div>
+                <div class="form-group"><label for="quantity">Quantidade Inicial</label><input type="number" id="quantity" min="0" required></div>
+                <div class="form-group"><label for="price">Preço</label><input type="number" id="price" min="0" step="0.01" required></div>
+                
+                <div class="form-group">
+                    <label>Foto do Produto</label>
+                    <div class="image-upload-wrapper">
+                        <label for="item-image-input" class="btn-upload"><i class="las la-camera"></i> Escolher Foto</label>
+                        <input type="file" id="item-image-input" accept="image/*" style="display:none">
+                        <input type="hidden" id="item-image-base64">
+                        <img id="item-image-preview" class="preview-img">
+                        <span id="img-msg" style="font-size: 0.8rem; color: #888; margin-left: 10px;">(Opcional)</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="modal-btn btn-save">Salvar Item</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="transaction-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header"><h2 id="transaction-title">Movimentação</h2><span class="close-btn" onclick="document.getElementById('transaction-modal').style.display='none'">&times;</span></div>
+            <div class="current-stock-display">Saldo Atual: <span id="current-stock-val">0</span></div>
+            <form id="transaction-form">
+                <input type="hidden" id="trans-id">
+                <input type="hidden" id="trans-type"> 
+                <div class="form-group">
+                    <label id="trans-label" for="trans-qty">Quantidade</label>
+                    <input type="number" id="trans-qty" min="1" required>
+                </div>
+                <button type="submit" id="trans-submit-btn" class="modal-btn">Confirmar</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="history-modal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2>Histórico de Movimentações</h2>
+                <span class="close-btn" onclick="document.getElementById('history-modal').style.display='none'">&times;</span>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+                <button id="clear-history-btn" class="btn"><i class="las la-trash"></i> Limpar Histórico Completo</button>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data/Hora</th>
+                        <th>Produto</th>
+                        <th>Tipo</th>
+                        <th>Qtd</th>
+                        <th>Preço Unit.</th>
+                    </tr>
+                </thead>
+                <tbody id="history-list">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+<script>
+    // ▼▼▼ CONFIGURAÇÃO FIREBASE ▼▼▼
+    const firebaseConfig = {
+      apiKey: "AIzaSyD_U4aMQZLipqy8Ul9Pjdd6pqtXxY5om_s", 
+      authDomain: "fluxia-estoque.firebaseapp.com",
+      projectId: "fluxia-estoque",
+      storageBucket: "fluxia-estoque.firebasestorage.app",
+      messagingSenderId: "227345206289",
+      appId: "1:227345206289:web:87a932467401320e0935b0",
+      measurementId: "G-850ECE8CVX" 
+    };
+
+    function showErrorOnScreen(msg) {
+        const div = document.createElement('div');
+        div.style.cssText = "position:fixed; bottom:20px; right:20px; background: #e74c3c; color: white; padding: 15px; border-radius: 8px; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-family: sans-serif;";
+        div.innerHTML = `<strong><i class="las la-exclamation-triangle"></i> Erro:</strong> ${msg}`;
+        document.body.appendChild(div);
+        setTimeout(() => div.remove(), 10000);
+    }
+
+    try { 
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const inventoryCollection = db.collection("inventory");
+        const historyCollection = db.collection("history"); 
+
+        db.collection("inventory").limit(1).get().catch(err => {
+            console.error(err);
+            if(err.code === 'permission-denied') showErrorOnScreen("Permissão negada. Verifique as 'Regras' no Firebase.");
+            else showErrorOnScreen("Erro ao conectar: " + err.message);
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const URGENT_STOCK_THRESHOLD = 1;
+            const LOW_STOCK_THRESHOLD = 5;
+            
+            const itemModal = document.getElementById('item-modal');
+            const transModal = document.getElementById('transaction-modal');
+            const historyModal = document.getElementById('history-modal');
+            const itemForm = document.getElementById('item-form');
+            const transForm = document.getElementById('transaction-form');
+            const inventoryList = document.getElementById('inventory-list');
+            const historyList = document.getElementById('history-list');
+            
+            // Variáveis para imagem
+            const imageInput = document.getElementById('item-image-input');
+            const imagePreview = document.getElementById('item-image-preview');
+            const imageBase64 = document.getElementById('item-image-base64');
+            const imgMsg = document.getElementById('img-msg');
+            
+            let localInventory = [];
+            let chartInstances = {}; 
+            let historyUnsubscribe = null;
+
+            const CHART_COLORS = ['#00F8A5', '#33D1FF', '#FF7BBE', '#BE85FF', '#FFC76B', '#29CCC4', '#FF6B6B', '#A9B0FF'];
+            const CHART_BG_COLORS = CHART_COLORS.map(color => color + '80');
+            const CHART_BORDER_COLOR = '#1B2B47';
+
+            document.addEventListener('click', () => {
+                profileDropdownMenu.classList.remove('show');
+            });
+
+            // --- Função de Compressão de Imagem ---
+            imageInput.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    const file = e.target.files[0];
+                    const reader = new FileReader();
+                    reader.onload = function(evt) {
+                        const img = new Image();
+                        img.src = evt.target.result;
+                        img.onload = function() {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            const maxSize = 300; 
+                            let width = img.width; let height = img.height;
+                            
+                            if (width > height) { if (width > maxSize) { height *= maxSize/width; width = maxSize; } } 
+                            else { if (height > maxSize) { width *= maxSize/height; height = maxSize; } }
+                            
+                            canvas.width = width; canvas.height = height;
+                            ctx.drawImage(img, 0, 0, width, height);
+                            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                            
+                            imagePreview.src = dataUrl;
+                            imagePreview.style.display = 'block';
+                            imgMsg.style.display = 'none';
+                            imageBase64.value = dataUrl;
+                        }
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            const logAction = async (itemName, actionType, quantity, price) => {
+                try {
+                    await historyCollection.add({
+                        itemName: itemName,
+                        type: actionType, 
+                        quantity: parseInt(quantity) || 0,
+                        price: parseFloat(price) || 0,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } catch (e) { console.error("Erro ao salvar histórico:", e); }
+            };
+
+            const setupRealtimeListener = () => {
+                inventoryCollection.orderBy("createdAt") 
+                    .onSnapshot((querySnapshot) => {
+                        localInventory = [];
+                        querySnapshot.forEach((doc) => {
+                            localInventory.push({ id: doc.id, ...doc.data() });
+                        });
+                        renderTable();
+                        const searchTerm = document.getElementById('search-box').value;
+                        if (searchTerm) { filterTable(searchTerm); }
+                        updateCharts(); 
+                    }, (error) => {
+                        console.error("ERRO LISTENER: ", error);
+                        showErrorOnScreen(error.message);
+                        inventoryList.innerHTML = `<tr><td colspan="6" style="text-align:center; color: var(--danger-color);">Erro de conexão. Veja o console.</td></tr>`;
+                    });
+            };
+
+            const loadHistory = () => {
+                if(historyUnsubscribe) historyUnsubscribe(); 
+                historyList.innerHTML = '<tr><td colspan="5" style="text-align:center;">Carregando...</td></tr>';
+                historyUnsubscribe = historyCollection.orderBy("timestamp", "desc").limit(50)
+                    .onSnapshot((snapshot) => {
+                        historyList.innerHTML = '';
+                        if(snapshot.empty) {
+                            historyList.innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum histórico recente.</td></tr>';
+                            return;
+                        }
+                        snapshot.forEach(doc => {
+                            const data = doc.data();
+                            const date = data.timestamp ? data.timestamp.toDate() : new Date();
+                            const formattedDate = date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+                            const formattedPrice = (data.price || 0).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+                            let badgeClass = '';
+                            if(data.type === 'Entrada') badgeClass = 'tag-in';
+                            else if(data.type === 'Saída') badgeClass = 'tag-out';
+                            else if(data.type === 'Novo Item') badgeClass = 'tag-new';
+                            else if(data.type === 'Edição') badgeClass = 'tag-edit';
+                            else badgeClass = 'tag-del';
+
+                            const row = `<tr>
+                                <td class="history-date">${formattedDate}</td>
+                                <td>${data.itemName}</td>
+                                <td><span class="history-tag ${badgeClass}">${data.type}</span></td>
+                                <td>${data.quantity}</td>
+                                <td>${formattedPrice}</td>
+                            </tr>`;
+                            historyList.innerHTML += row;
+                        });
+                    });
+            };
+
+            // --- CRUD ---
+            const addItem = async (itemData) => {
+                try {
+                    const priceString = (itemData.price || '0').replace(',', '.');
+                    const qty = parseInt(itemData.quantity, 10) || 0;
+                    const price = parseFloat(priceString) || 0;
+                    const name = itemData.name || "Sem Nome";
+                    
+                    await inventoryCollection.add({
+                         name: name,
+                         category: itemData.category || "Sem Categoria",
+                         quantity: qty,
+                         price: price,
+                         imageUrl: imageBase64.value, // Salva a imagem
+                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    await logAction(name, 'Novo Item', qty, price);
+                    
+                } catch (error) { showErrorOnScreen(error.message); }
+            };
+
+            const updateItem = async (itemId, itemData) => {
+                try {
+                    const priceString = (itemData.price || '0').replace(',', '.');
+                    const newQty = parseInt(itemData.quantity, 10);
+                    const newPrice = parseFloat(priceString);
+                    
+                    await inventoryCollection.doc(itemId).update({
+                         name: itemData.name,
+                         category: itemData.category,
+                         quantity: newQty,
+                         price: newPrice,
+                         imageUrl: imageBase64.value // Atualiza a imagem
+                    });
+
+                    await logAction(itemData.name, 'Edição', newQty, newPrice);
+
+                } catch (error) { showErrorOnScreen(error.message); }
+            };
+
+            const deleteItem = async (itemId) => {
+                try { 
+                    const item = localInventory.find(i => i.id === itemId);
+                    const name = item ? item.name : 'Item Desconhecido';
+                    const price = item ? item.price : 0;
+                    await inventoryCollection.doc(itemId).delete(); 
+                    await logAction(name, 'Exclusão', 0, price);
+                } 
+                catch (error) { showErrorOnScreen(error.message); }
+            };
+
+            const handleTransaction = async (itemId, type, amount) => {
+                try {
+                    const item = localInventory.find(i => i.id === itemId);
+                    if (!item) return;
+                    let currentQty = parseInt(item.quantity || 0, 10);
+                    let newQty = currentQty;
+                    let actionType = '';
+
+                    if (type === 'in') { 
+                        newQty += amount; 
+                        actionType = 'Entrada';
+                    } else {
+                        if (amount > currentQty) { alert(`Saldo insuficiente!`); return; }
+                        newQty -= amount;
+                        actionType = 'Saída';
+                    }
+                    
+                    await inventoryCollection.doc(itemId).update({ quantity: newQty });
+                    await logAction(item.name, actionType, amount, item.price);
+                    
+                    transModal.style.display = 'none'; transForm.reset();
+                } catch (error) { showErrorOnScreen(error.message); }
+            };
+
+            // --- Renderização ---
+            const updateDashboard = () => {
+                const inventory = Array.isArray(localInventory) ? localInventory : [];
+                const totalValue = inventory.reduce((sum, item) => sum + ((parseFloat(item.price) || 0) * (parseInt(item.quantity, 10) || 0)), 0);
+                const totalItems = inventory.reduce((sum, item) => sum + (parseInt(item.quantity, 10) || 0), 0);
+                const uniqueCategories = new Set(inventory.map(item => item.category || "Sem Categoria")).size;
+                document.getElementById('total-value').textContent = totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                document.getElementById('total-items').textContent = totalItems;
+                document.getElementById('total-categories').textContent = uniqueCategories;
+            };
+
+            const renderTable = () => {
+                 inventoryList.innerHTML = '';
+                if (!Array.isArray(localInventory) || localInventory.length === 0) {
+                    inventoryList.innerHTML = `<tr><td colspan="6" style="text-align:center;">Nenhum dado encontrado no Firebase.</td></tr>`;
+                    updateDashboard(); return;
+                }
+                localInventory.forEach((item, index) => {
+                    const quantity = parseInt(item.quantity || 0, 10);
+                    const price = parseFloat(item.price || 0);
+                    const row = document.createElement('tr');
+                    if (quantity <= URGENT_STOCK_THRESHOLD) { row.classList.add('urgent-stock'); } 
+                    else if (quantity <= LOW_STOCK_THRESHOLD) { row.classList.add('low-stock'); }
+                    row.setAttribute('data-id', item.id);
+                    
+                    // Lógica para mostrar foto na tabela
+                    const thumbHtml = item.imageUrl 
+                        ? `<img src="${item.imageUrl}" class="table-thumb">` 
+                        : `<span class="table-no-thumb"><i class="las la-box"></i></span>`;
+
+                    row.innerHTML = `
+                        <td>${index + 1}</td> 
+                        <td>${thumbHtml} ${item.name || 'N/A'}</td> 
+                        <td>${item.category || 'N/A'}</td>
+                        <td>${quantity}</td> <td>${price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td>
+                        <td class="action-icons">
+                            <button class="action-btn btn-add" title="Entrada" data-id="${item.id}"><i class="las la-plus-circle"></i></button>
+                            <button class="action-btn btn-remove" title="Saída" data-id="${item.id}"><i class="las la-minus-circle"></i></button>
+                            <button class="action-btn btn-edit" title="Editar" data-id="${item.id}"><i class="las la-pen"></i></button>
+                            <button class="action-btn btn-delete" title="Excluir" data-id="${item.id}"><i class="las la-trash-alt"></i></button>
+                        </td>`;
+                    inventoryList.appendChild(row);
+                });
+                updateDashboard(); 
+            };
+            
+            // --- Gráficos (Dashboard) ---
+            const aggregateDataByCategory = () => {
+                const categoryData = {};
+                localInventory.forEach(item => {
+                    const category = item.category || "Sem Categoria";
+                    const quantity = parseInt(item.quantity, 10) || 0;
+                    const price = parseFloat(item.price) || 0;
+                    if (!categoryData[category]) categoryData[category] = { quantity: 0, value: 0 };
+                    categoryData[category].quantity += quantity;
+                    categoryData[category].value += quantity * price;
+                });
+                const labels = Object.keys(categoryData).sort(); 
+                return { labels, quantities: labels.map(l => categoryData[l].quantity), values: labels.map(l => categoryData[l].value) };
+            };
+            
+            const updateChart = (chartId, chartType, chartTitle, labels, data, labelText, customOptions = {}) => {
+                 const ctx = document.getElementById(chartId);
+                 if (!ctx) return;
+                 if (chartInstances[chartId]) { chartInstances[chartId].destroy(); }
+                 chartInstances[chartId] = new Chart(ctx.getContext('2d'), {
+                     type: chartType,
+                     data: { 
+                         labels: labels,
+                         datasets: [{
+                             label: labelText,
+                             data: data, 
+                             backgroundColor: labels.map((_, i) => CHART_BG_COLORS[i % CHART_BG_COLORS.length]),
+                             borderColor: (chartType === 'doughnut') ? CHART_BORDER_COLOR : labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]), 
+                             borderWidth: (chartType === 'doughnut') ? 3 : 1, 
+                             borderRadius: 6
+                         }]
+                     },
+                     options: { 
+                         responsive: true, 
+                         plugins: { 
+                             title: { display: true, text: chartTitle, color: '#FFFFFF', font: { size: 16 } },
+                             legend: { display: (chartType !== 'bar'), position: 'right', labels: { color: '#FFFFFF' } },
+                             tooltip: { 
+                                 backgroundColor: 'rgba(0, 0, 0, 0.8)', titleColor: '#FFFFFF', bodyColor: '#FFFFFF',
+                                 callbacks: { 
+                                     label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) label += ': ';
+                                        let value = context.raw;
+                                        if (value !== null && value !== undefined) {
+                                            if (chartId === 'valueByCategoryChart') label += value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                                            else label += value;
+                                        }
+                                        return label;
+                                     }
+                                 }
+                             }
+                         },
+                         scales: (chartType === 'bar') ? { 
+                             y: { beginAtZero: true, ticks: { color: '#FFFFFF' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } },
+                             x: { ticks: { color: '#FFFFFF' }, grid: { display: false } }
+                         } : {},
+                         ...customOptions 
+                     }
+                 });
+            };
+
+            const updateCharts = () => {
+                 const { labels, quantities, values } = aggregateDataByCategory();
+                 updateChart('quantityByCategoryChart', 'bar', 'Quantidade por Categoria', labels, quantities, 'Quantidade');
+                 updateChart('valueByCategoryChart', 'bar', 'Valor por Categoria', labels, values, 'Valor (R$)');
+                 const sortedInventory = [...localInventory].sort((a, b) => (b.quantity || 0) - (a.quantity || 0));
+                 updateChart('itemDistributionChart', 'doughnut', 'Distribuição de Itens', sortedInventory.map(i => i.name), sortedInventory.map(i => i.quantity), 'Quantidade', { cutout: '70%' });
+             };
+            
+            // --- Listeners e Filtros ---
+            document.getElementById('add-item-btn').addEventListener('click', () => { 
+                document.getElementById('modal-title').textContent = "Adicionar Novo Item"; 
+                document.getElementById('edit-id').value = ''; 
+                document.getElementById('item-form').reset(); 
+                
+                // Limpa preview
+                imagePreview.style.display = 'none';
+                imageBase64.value = '';
+                imgMsg.style.display = 'inline';
+
+                itemModal.style.display = 'block'; 
+            });
+
+            document.getElementById('history-btn').addEventListener('click', () => {
+                historyModal.style.display = 'block';
+                loadHistory(); 
+            });
+
+            document.getElementById('clear-history-btn').addEventListener('click', async () => {
+                if(!confirm("TEM CERTEZA? Isso apagará todo o histórico de movimentações permanentemente.")) return;
+                try {
+                    const snapshot = await historyCollection.get();
+                    if(snapshot.empty) { alert("Histórico já está vazio."); return; }
+                    const batch = db.batch();
+                    snapshot.docs.forEach(doc => { batch.delete(doc.ref); });
+                    await batch.commit();
+                    alert("Histórico apagado com sucesso!");
+                } catch(e) { console.error(e); alert("Erro ao limpar: " + e.message); }
+            });
+
+            itemForm.addEventListener('submit', async (e) => { 
+                e.preventDefault(); 
+                const itemData = { 
+                    name: document.getElementById('product-name').value, 
+                    category: document.getElementById('category').value, 
+                    quantity: document.getElementById('quantity').value, 
+                    price: document.getElementById('price').value 
+                }; 
+                const editingId = document.getElementById('edit-id').value; 
+                if (editingId) { await updateItem(editingId, itemData); } else { await addItem(itemData); } 
+                itemModal.style.display = 'none'; itemForm.reset();
+            });
+
+            transForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const id = document.getElementById('trans-id').value;
+                const type = document.getElementById('trans-type').value;
+                const qty = parseInt(document.getElementById('trans-qty').value, 10);
+                if(id && qty > 0) { await handleTransaction(id, type, qty); }
+            });
+
+            inventoryList.addEventListener('click', (e) => {
+                const btn = e.target.closest('button');
+                if (!btn) return;
+                const itemId = btn.getAttribute('data-id');
+                if (!itemId) return;
+                const item = localInventory.find(i => i.id === itemId);
+                const transQtyInput = document.getElementById('trans-qty');
+                if (btn.classList.contains('btn-edit')) {
+                    if (item) {
+                        document.getElementById('modal-title').textContent = "Editar Item";
+                        document.getElementById('edit-id').value = item.id;
+                        document.getElementById('product-name').value = item.name || '';
+                        document.getElementById('category').value = item.category || '';
+                        document.getElementById('quantity').value = item.quantity || 0;
+                        document.getElementById('price').value = item.price || 0;
+                        
+                        // Carregar imagem existente
+                        if(item.imageUrl) {
+                            imagePreview.src = item.imageUrl;
+                            imagePreview.style.display = 'block';
+                            imgMsg.style.display = 'none';
+                            imageBase64.value = item.imageUrl;
+                        } else {
+                            imagePreview.style.display = 'none';
+                            imgMsg.style.display = 'inline';
+                            imageBase64.value = '';
+                        }
+
+                        itemModal.style.display = 'block';
+                    }
+                } else if (btn.classList.contains('btn-delete')) {
+                    if (confirm('Tem certeza que deseja excluir este item?')) { deleteItem(itemId); }
+                } else if (btn.classList.contains('btn-add')) {
+                    document.getElementById('transaction-title').textContent = "Entrada de Estoque (" + item.name + ")";
+                    document.getElementById('trans-id').value = itemId;
+                    document.getElementById('trans-type').value = 'in';
+                    document.getElementById('current-stock-val').textContent = item.quantity;
+                    transQtyInput.removeAttribute('max'); transQtyInput.value = 1;
+                    document.getElementById('trans-submit-btn').textContent = "Confirmar Entrada";
+                    document.getElementById('trans-submit-btn').className = "modal-btn btn-transaction-in";
+                    transModal.style.display = 'block'; transQtyInput.focus();
+                } else if (btn.classList.contains('btn-remove')) {
+                    document.getElementById('transaction-title').textContent = "Saída de Estoque (" + item.name + ")";
+                    document.getElementById('trans-id').value = itemId;
+                    document.getElementById('trans-type').value = 'out';
+                    document.getElementById('current-stock-val').textContent = item.quantity;
+                    transQtyInput.max = item.quantity; transQtyInput.value = 1;
+                    document.getElementById('trans-submit-btn').textContent = "Confirmar Saída";
+                    document.getElementById('trans-submit-btn').className = "modal-btn btn-transaction-out";
+                    transModal.style.display = 'block'; transQtyInput.focus();
+                }
+            });
+            
+            const filterTable = (searchTerm) => {
+                const lowerSearchTerm = searchTerm.toLowerCase();
+                const rows = inventoryList.getElementsByTagName('tr');
+                let foundItems = 0;
+                const existingNoResultRow = inventoryList.querySelector('.no-search-result');
+                if (existingNoResultRow) { existingNoResultRow.style.display = 'none'; }
+                for (let row of rows) {
+                    if (row.hasAttribute('data-id')) {
+                        const id = (row.cells[0] ? row.cells[0].textContent : '').toLowerCase();
+                        const productName = (row.cells[1] ? row.cells[1].textContent : '').toLowerCase();
+                        const category = (row.cells[2] ? row.cells[2].textContent : '').toLowerCase();
+                        if (id.includes(lowerSearchTerm) || productName.includes(lowerSearchTerm) || category.includes(lowerSearchTerm)) {
+                            row.style.display = ''; foundItems++;
+                        } else { row.style.display = 'none'; }
+                    }
+                }
+                if (foundItems === 0 && localInventory.length > 0 && searchTerm) {
+                     let noResultRow = inventoryList.querySelector('.no-search-result');
+                     if (!noResultRow) {
+                         noResultRow = document.createElement('tr');
+                         noResultRow.classList.add('no-search-result');
+                         noResultRow.innerHTML = `<td colspan="6" style="text-align:center; color: var(--text-muted);">Nenhum item encontrado.</td>`;
+                         inventoryList.appendChild(noResultRow);
+                     }
+                     noResultRow.style.display = '';
+                }
+            };
+            document.getElementById('search-box').addEventListener('input', (e) => { filterTable(e.target.value); });
+
+            document.getElementById('export-html-btn').addEventListener('click', () => {
+                if (!localInventory.length) { alert("Sem dados para exportar."); return; }
+                const dataSnapshot = JSON.stringify(localInventory);
+                const totalItems = localInventory.reduce((sum, i) => sum + (i.quantity || 0), 0);
+                const totalValue = localInventory.reduce((sum, i) => sum + ((i.quantity || 0) * (i.price || 0)), 0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+                const uniqueCats = new Set(localInventory.map(i => i.category)).size;
+
+                const htmlContent = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório Gerencial - FluxIA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #ffffff; color: #002f43; padding: 40px; margin: 0; } 
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; border-bottom: 3px solid #006894; padding-bottom: 20px; }
+        h1 { color: #003b54; margin: 0; font-size: 1.8rem; font-weight: 700; }
+        .date { color: #5ea0bc; font-size: 0.9rem; } 
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .kpi-card { background: #f8fafc; border: 1px solid #c2dbe5; border-left: 5px solid #006894; border-radius: 6px; padding: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .kpi-title { color: #2e83a7; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; font-weight: 600; } 
+        .kpi-value { color: #002f43; font-size: 1.6rem; font-weight: 700; } 
+        .table-container { background-color: #fff; border-radius: 8px; border: 1px solid #c2dbe5; padding: 20px; overflow-x: auto; margin-bottom: 50px; }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th { background-color: #c2dbe5; color: #002f43; padding: 12px 15px; text-align: left; font-weight: 600; } 
+        td { padding: 12px 15px; border-bottom: 1px solid #e6f0f4; color: #004a69; } 
+        tr:nth-child(even) { background-color: #e6f0f4; } 
+        tr:hover td { background-color: #dbe9f0; }
+        .print-btn { background: #fff; border: 1px solid #00587e; color: #00587e; padding: 8px 20px; border-radius: 4px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .print-btn:hover { background: #e6f0f4; }
+        @media print { .print-btn { display: none; } body { padding: 0; } .kpi-card, .table-container { box-shadow: none; border: 1px solid #ccc; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>Relatório Gerencial FluxIA</h1>
+            <div class="date">Gerado em: ${new Date().toLocaleString()}</div>
+        </div>
+        <button class="print-btn" onclick="window.print()">Imprimir Relatório</button>
+    </div>
+
+    <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-title">Valor Total</div><div class="kpi-value">${totalValue}</div></div>
+        <div class="kpi-card"><div class="kpi-title">Itens em Estoque</div><div class="kpi-value">${totalItems}</div></div>
+        <div class="kpi-card"><div class="kpi-title">Categorias</div><div class="kpi-value">${uniqueCats}</div></div>
+    </div>
+
+    <div class="table-container">
+        <h3 style="margin-top:0; color: #003b54; font-size: 1.2rem;">Detalhamento do Estoque</h3>
+        <table>
+            <thead><tr><th>Produto</th><th>Categoria</th><th>Qtd</th><th>Preço Unit.</th><th>Valor Total</th></tr></thead>
+            <tbody id=\"table-body\"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const inventory = ${dataSnapshot};
+        const tbody = document.getElementById('table-body');
+        inventory.forEach(item => {
+            const row = document.createElement('tr');
+            const totalVal = ((item.quantity||0)*(item.price||0)).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+            const unitVal = (item.price||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+            row.innerHTML = '<td>'+(item.name||'-')+'</td><td>'+(item.category||'-')+'</td><td>'+(item.quantity||0)+'</td><td>'+unitVal+'</td><td>'+totalVal+'</td>';
+            tbody.appendChild(row);
+        });
+    <\/script>
+</body>
+</html>`;
+                const reportWindow = window.open('', '_blank');
+                reportWindow.document.write(htmlContent);
+                reportWindow.document.close();
+            });
+
+            setupRealtimeListener(); 
+        });
+    } catch (error) {
+        showErrorOnScreen("ERRO CRÍTICO: " + error.message);
+    }
+</script>
+</body>
+</html>

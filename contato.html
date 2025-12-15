@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Fale Conosco - FluxIA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        /* Variáveis de Cor Mantidas */
+        :root {
+            /* Paleta de Cores: Verde e Branco */
+            --dark-bg: #010613;
+            --primary-color: #00F8A5;
+            /* Verde vibrante */
+            --secondary-color: #E6E6E6;
+            /* Cinza/branco suave */
+            --text-light: #F8F8F8;
+            --text-muted: #A0A0A0;
+            --card-bg: rgba(255, 255, 255, 0.08);
+            --header-bg: rgba(1, 6, 19, 0.8);
+            --main-bg-color: #0A192F;
+        }
+
+        html { scroll-behavior: smooth; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        body {
+            background-color: var(--main-bg-color);
+            color: var(--text-light);
+            overflow-x: hidden;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER & FOOTER (Estilos mantidos) */
+        header {
+            background-color: var(--header-bg);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 50px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+
+        nav { display: flex; gap: 20px; }
+        nav a {
+            text-decoration: none;
+            color: var(--text-light);
+            font-weight: 500;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        nav a:hover, nav a.active {
+            color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+        
+        nav a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            background: var(--primary-color);
+            left: 50%;
+            bottom: 0;
+            transition: width 0.3s ease, left 0.3s ease;
+        }
+
+        nav a:hover::after, nav a.active::after {
+            width: 100%;
+            left: 0;
+        }
+
+        /* CONTEÚDO PRINCIPAL */
+        main {
+            padding: 120px 20px 50px;
+            max-width: 1000px;
+            margin: 0 auto;
+            flex-grow: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .contact-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            gap: 40px;
+            max-width: 700px;
+            padding: 40px;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 1s ease;
+        }
+
+        .contact-container h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 4vw, 3rem);
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .contact-container p {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+        }
+
+        .form-group { margin-bottom: 20px; }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--secondary-color);
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 15px;
+            font-size: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-light);
+            transition: all 0.3s ease;
+            resize: vertical;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 5px rgba(100, 255, 218, 0.5); 
+        }
+
+        .form-group textarea { min-height: 150px; }
+
+        button.submit-btn {
+            cursor: pointer;
+            background-color: var(--primary-color);
+            color: var(--dark-bg);
+            font-weight: 600;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 4px;
+            width: 100%;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        button.submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(100, 255, 218, 0.4);
+            background-color: #4EE8C1;
+        }
+        
+        #feedbackMessage {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: 600;
+            display: none; 
+        }
+        
+        .success { background-color: #28a745; color: white; }
+        .error { background-color: #dc3545; color: white; }
+        .hidden { display: none; }
+
+        /* FOOTER */
+        footer {
+            background-color: #111111;
+            color: #EEEEEE; 
+            padding: 25px 0;
+            width: 100%;
+            margin-top: auto;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.7); 
+            text-align: center;
+        }
+        
+        footer p {
+            margin: 0;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                padding: 20px;
+                gap: 15px;
+            }
+
+            main { padding-top: 150px; }
+            .contact-container { padding: 25px; }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <a href="Fluxiainicio.html" class="logo">FluxIA</a>
+        <nav>
+            <a href="Fluxiainicio.html">Início</a>
+            <a href="calcular rotas.html">Calcular Rota</a>
+            <a href="estoque.html">Sistema de Estoque</a>
+            <a href="loja.html">Loja</a>
+            <a href="contato.html" class="active">Contato</a>
+        </nav>
+    </header>
+
+    <main>
+        <div class="contact-container">
+            <h1>Fale Conosco</h1>
+            <p>Se você tem dúvidas, sugestões ou precisa de suporte, use o formulário abaixo. Nossa equipe responderá o mais breve possível.</p>
+            
+            <form action="https://formspree.io/f/xyznwlwo" method="POST" id="contactForm">
+                
+                <div class="form-group">
+                    <label for="name">Seu Nome Completo:</label>
+                    <input type="text" id="name" name="Nome" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Seu Melhor E-mail:</label>
+                    <input type="email" id="email" name="_replyto" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="subject">Assunto:</label>
+                    <input type="text" id="subject" name="Assunto" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="message">Mensagem:</label>
+                    <textarea id="message" name="Mensagem" required></textarea>
+                </div>
+                
+                <button type="submit" class="submit-btn">Enviar Mensagem</button>
+            </form>
+            
+            <div id="feedbackMessage"></div>
+        </div>
+    </main>
+
+    <footer>
+        <p>© 2025 FluxIA. Todos os direitos reservados.</p>
+    </footer>
+   
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('contactForm');
+            const feedbackMessage = document.getElementById('feedbackMessage');
+            
+            // Verifica a URL em busca do parâmetro '?submitted=true' após o Formspree
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('submitted') === 'true') {
+                feedbackMessage.textContent = 'Mensagem enviada com sucesso! Agradecemos o seu contato.';
+                feedbackMessage.className = 'success';
+                feedbackMessage.style.display = 'block';
+                
+                // Limpa o parâmetro da URL após exibir o feedback (boa prática)
+                history.replaceState(null, '', window.location.pathname);
+            }
+            
+            // Adiciona um listener para mostrar uma mensagem de espera ao clicar no botão
+            form.addEventListener('submit', function() {
+                // Mensagem de erro caso o ID não tenha sido trocado
+                if (form.action.includes('SEU_ID_DO_FORMSPREE_PARA_YURI')) {
+                    feedbackMessage.textContent = 'ERRO: Por favor, troque o placeholder do Formspree (action) pelo seu ID real.';
+                    feedbackMessage.className = 'error';
+                } else {
+                    // Mensagem de envio real (feedback visual antes do Formspree redirecionar)
+                    feedbackMessage.textContent = 'Enviando... Por favor, aguarde o Formspree.';
+                    feedbackMessage.className = 'success';
+                }
+                feedbackMessage.style.display = 'block';
+            });
+        });
+    </script>
+</body>
+
+</html>

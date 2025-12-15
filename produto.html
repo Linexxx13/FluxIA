@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhes do Produto - FluxIA</title>
+    
+    <link rel="stylesheet" href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root { 
+            --bg-body: #050a14; 
+            --bg-card: #16213e; 
+            --primary: #00F8A5; 
+            --text: #e2e8f0; 
+            --accent: #38bdf8;
+            --header-bg: rgba(5, 10, 20, 0.9);
+        }
+
+        /* Reset de Links para evitar o roxo */
+        * { box-sizing: border-box; margin: 0; padding: 0; text-decoration: none !important; }
+        a, a:visited, a:active { color: inherit; }
+
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            background: var(--bg-body); 
+            color: var(--text); 
+            padding-top: 100px; /* Espaço para o header fixo */
+        }
+
+        /* --- HEADER GLOBAL (Igual à Loja) --- */
+        header { 
+            background: var(--header-bg); 
+            padding: 15px 5%; 
+            position: fixed; 
+            top: 0; 
+            width: 100%;
+            z-index: 1000; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+            backdrop-filter: blur(10px); 
+        }
+        
+        .brand-logo { 
+            color: var(--primary); 
+            font-family: 'Space Mono', monospace; 
+            font-size: 1.5rem; 
+            font-weight: bold; 
+        }
+
+        nav { display: flex; align-items: center; gap: 20px; }
+        nav a { 
+            color: var(--text) !important; 
+            font-weight: 500; 
+            font-size: 0.9rem; 
+            transition: 0.3s; 
+        }
+        nav a:hover { color: var(--primary) !important; }
+
+        /* Perfil Dropdown */
+        .profile-icon-container { position: relative; cursor: pointer; margin-left: 10px; }
+        .profile-icon { font-size: 28px; color: var(--primary); }
+        .profile-dropdown-menu {
+            position: absolute; top: 100%; right: 0; margin-top: 15px;
+            background-color: var(--bg-card); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px; min-width: 200px; padding: 15px; display: none;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 1001;
+        }
+        .profile-dropdown-menu.show { display: block; }
+        .profile-dropdown-menu h4 { color: var(--primary); font-size: 0.9rem; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; }
+        .profile-dropdown-menu a { display: block; padding: 8px 0; color: var(--text) !important; font-size: 0.85rem; }
+        .profile-dropdown-menu a:hover { color: var(--primary) !important; }
+
+        /* --- CONTEÚDO DO PRODUTO --- */
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+
+        /* Barra de Ações (Voltar e Carrinho) */
+        .action-bar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 30px; 
+        }
+
+        .btn-back { 
+            display: flex; align-items: center; gap: 8px; 
+            color: var(--text); font-weight: 600; cursor: pointer; transition: 0.3s;
+        }
+        .btn-back:hover { color: var(--primary); }
+
+        .cart-status { 
+            position: relative; cursor: pointer; font-size: 2rem; color: var(--primary); 
+            background: rgba(0, 248, 165, 0.1); padding: 10px; border-radius: 12px; transition: 0.3s;
+        }
+        .cart-status:hover { background: rgba(0, 248, 165, 0.2); transform: scale(1.05); }
+        .cart-badge { 
+            position: absolute; top: -2px; right: -2px; background: #fff; color: #000; 
+            font-size: 0.75rem; padding: 2px 7px; border-radius: 50%; font-weight: bold; 
+        }
+
+        /* Layout do Card de Detalhes */
+        .product-shell { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; background: var(--bg-card); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.05); }
+        @media (max-width: 768px) { .product-shell { grid-template-columns: 1fr; } }
+
+        .img-box { background: #0f172a; border-radius: 16px; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 400px; }
+        .product-img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .info-box { display: flex; flex-direction: column; gap: 20px; }
+        .p-category { color: var(--primary); text-transform: uppercase; font-size: 0.9rem; font-weight: 700; letter-spacing: 1px; }
+        .p-name { font-size: 2.5rem; font-weight: 700; color: #fff; line-height: 1.2; }
+        .p-price { font-size: 2rem; font-weight: 700; color: #fff; }
+        
+        .buy-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .btn-p { padding: 16px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.3s; text-align: center; border: none; }
+        .btn-primary { background: var(--primary); color: #000; }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0, 248, 165, 0.3); }
+        .btn-secondary { background: transparent; color: var(--text); border: 2px solid rgba(255,255,255,0.1); }
+        .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-logo">FluxIA</div>
+        <nav>
+            
+            <a href="Fluxiainicio.html">Início</a>
+            <a href="calcular rotas.html">Calcular Rota</a>
+            <a href="estoque.html">Sistema de Estoque</a>
+            <a href="loja.html">Loja</a>
+            <a href="contato.html">Contato</a>
+            
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="action-bar">
+            <div class="btn-back" onclick="window.location.href='loja.html'">
+                <i class="las la-arrow-left"></i> Voltar para a Loja
+            </div>
+            <div class="cart-status" onclick="window.location.href='carrinho.html'">
+                <i class="las la-shopping-bag"></i>
+                <span class="cart-badge" id="cart-count">0</span>
+            </div>
+        </div>
+
+        <div id="product-content">
+            <p>Carregando detalhes...</p>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyD_U4aMQZLipqy8Ul9Pjdd6pqtXxY5om_s", 
+            authDomain: "fluxia-estoque.firebaseapp.com",
+            projectId: "fluxia-estoque",
+            storageBucket: "fluxia-estoque.firebasestorage.app",
+            messagingSenderId: "227345206289",
+            appId: "1:227345206289:web:87a932467401320e0935b0"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let currentProduct = null;
+
+        // Lógica do Menu de Perfil
+        document.addEventListener('DOMContentLoaded', () => {
+            const profileIconContainer = document.querySelector('.profile-icon-container');
+            const profileDropdownMenu = document.querySelector('.profile-dropdown-menu');
+
+            profileIconContainer.addEventListener('click', (event) => {
+                event.stopPropagation();
+                profileDropdownMenu.classList.toggle('show');
+            });
+
+            document.addEventListener('click', () => {
+                profileDropdownMenu.classList.remove('show');
+            });
+        });
+
+        function getProductId() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id');
+        }
+
+        async function loadProduct() {
+            const id = getProductId();
+            if(!id) { window.location.href = 'loja.html'; return; }
+
+            const doc = await db.collection("inventory").doc(id).get();
+            if(!doc.exists) { window.location.href = 'loja.html'; return; }
+
+            currentProduct = { id: doc.id, ...doc.data() };
+            renderProduct();
+        }
+
+        function renderProduct() {
+            const container = document.getElementById('product-content');
+            const p = currentProduct;
+            
+            const imageHtml = p.imageUrl 
+                ? `<img src="${p.imageUrl}" class="product-img" alt="${p.name}">`
+                : `<i class="las la-camera-retro" style="font-size: 5rem; opacity: 0.1;"></i>`;
+
+            container.innerHTML = `
+                <div class="product-shell">
+                    <div class="img-box">${imageHtml}</div>
+                    <div class="info-box">
+                        <div class="p-category">${p.category || 'Geral'}</div>
+                        <h1 class="p-name">${p.name}</h1>
+                        <div class="p-price">R$ ${parseFloat(p.price||0).toFixed(2).replace('.', ',')}</div>
+                        
+                        <div style="margin-top: 10px; line-height: 1.6; opacity: 0.8;">
+                            <p>Produto de alta qualidade integrado ao ecossistema FluxIA. Disponibilidade imediata para envio.</p>
+                        </div>
+
+                        <div class="buy-actions">
+                            <button class="btn-p btn-secondary" id="btn-add-cart">
+                                <i class="las la-cart-plus"></i> Adicionar
+                            </button>
+                            <button class="btn-p btn-primary" id="btn-buy-now">Comprar Agora</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Listeners dos botões após renderizar
+            document.getElementById('btn-add-cart').addEventListener('click', () => {
+                if(tryAddToCart()) {
+                    const btn = document.getElementById('btn-add-cart');
+                    btn.innerHTML = `<i class="las la-check"></i> Adicionado`;
+                    setTimeout(() => { btn.innerHTML = `<i class="las la-cart-plus"></i> Adicionar`; }, 2000);
+                }
+            });
+
+            document.getElementById('btn-buy-now').addEventListener('click', () => {
+                if(tryAddToCart()) { window.location.href = 'carrinho.html'; }
+            });
+        }
+
+       function tryAddToCart() {
+    if(!currentProduct) return false;
+    
+    // REGRA: Se o estoque zerou enquanto o usuário estava na página
+    if (currentProduct.quantity <= 0) {
+        alert("Este produto acabou de sair de estoque.");
+        return false;
+    }
+
+    let cart = JSON.parse(localStorage.getItem('fluxiaCart')) || [];
+    const existing = cart.find(item => item.id === currentProduct.id);
+    
+    const qtyNoCarrinho = existing ? existing.qty : 0;
+    
+    // REGRA: Impor limite total
+    if (qtyNoCarrinho + 1 > currentProduct.quantity) {
+        alert(`Desculpe! Só temos ${currentProduct.quantity} unidade(s) deste item no estoque.`);
+        return false;
+    }
+
+    if(existing) {
+        existing.qty++;
+        existing.stock = currentProduct.quantity; // Atualiza info de estoque no carrinho
+    } else {
+        cart.push({
+            id: currentProduct.id,
+            name: currentProduct.name,
+            price: currentProduct.price,
+            imageUrl: currentProduct.imageUrl,
+            qty: 1,
+            stock: currentProduct.quantity // Salva o limite total para o carrinho usar
+        });
+    }
+    localStorage.setItem('fluxiaCart', JSON.stringify(cart));
+    updateCartCount();
+    return true;
+}
+
+        function updateCartCount() {
+            const cart = JSON.parse(localStorage.getItem('fluxiaCart')) || [];
+            const count = cart.reduce((a, b) => a + b.qty, 0);
+            document.getElementById('cart-count').innerText = count;
+        }
+
+        updateCartCount();
+        loadProduct();
+    </script>
+</body>
+</html>

@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Calculadora de Rotas - FluxIA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        :root {
+            --dark-bg: #0A192F;
+            --primary-color: #00F8A5;
+            --text-light: #F8F8F8;
+            --text-muted: #A0A0A0;
+            --main-bg-color: #0A192F;
+            --header-bg: rgba(1, 6, 19, 0.8);
+        }
+
+        /* Reset Básico Minimalista */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        body {
+            background-color: var(--main-bg-color);
+            color: var(--text-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.5;
+        }
+
+        /* Header Minimalista */header {
+            background-color: var(--header-bg);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 50px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .logo {
+            font-family: 'Space Mono', monospace;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-decoration: none;
+            letter-spacing: 1px;
+            text-shadow: none;
+        }
+
+        nav {
+            display: flex;
+            gap: 20px;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: var(--text-light);
+            font-weight: 500;
+            padding: 10px 15px;
+            transition: all 0.3s ease;
+        }
+
+        nav a:hover {
+            color: var(--primary-color);
+            transform: translateY(-2px);
+            text-shadow: 0 0 5px var(--primary-color);
+        }
+
+        /* icon styles*/
+        
+        /* Ícone de Perfil e Menu */
+        .profile-icon-container {
+            position: relative;
+            cursor: pointer;
+            margin-left: 20px;
+        }
+
+        .profile-icon {
+            margin-top: 5px;
+            font-size: 34px;
+            color: var(--primary-color);
+            transition: all 0.3s ease;
+        }
+
+        .profile-icon:hover {
+            color: var(--secondary-color);
+            transform: scale(1.1);
+        }
+
+        .profile-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 10px;
+            background-color: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            min-width: 200px;
+            padding: 15px;
+            display: none;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: 100;
+        }
+
+        .profile-dropdown-menu.show {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .profile-dropdown-menu h4 {
+            font-family: 'Poppins', sans-serif;
+            color: var(--primary-color);
+            font-size: 1rem;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .profile-dropdown-menu a {
+            text-decoration: none;
+            color: var(--text-light);
+            display: block;
+            padding: 10px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            border-radius: 5px;
+        }
+
+        .profile-dropdown-menu a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--primary-color);
+        }
+
+
+
+        /* Main Layout */
+        main {
+            padding: 100px 20px 50px;
+            max-width: 1300px;
+            margin: 0 auto;
+            flex-grow: 1;
+            width: 100%;
+        }
+
+        .layout-container {
+            margin-top: 100px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 50px;
+            /* Espaçamento reduzido */
+            width: 100%;
+        }
+
+        @media (min-width: 992px) {
+            .layout-container {
+                grid-template-columns: 350px 1fr;
+                /* Largura do formulário reduzida */
+                gap: 60px;
+            }
+        }
+
+        /* Formulário Minimalista */
+        .rota-form {
+            padding: 20px 0;
+            /* Removendo padding horizontal grande e fundo */
+            background-color: transparent;
+            text-align: left;
+        }
+
+        .rota-form h1 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            color: var(--text-light);
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            /* Espaçamento dos inputs reduzido */
+            margin-bottom: 30px;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 15px 15px;
+            /* Padding reduzido para um look mais slim */
+            font-size: 1rem;
+            border: 1px solid var(--text-muted);
+            /* Borda mais fina */
+            border-radius: 4px;
+            /* Arredondamento mínimo */
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            transition: all 0.2s ease;
+        }
+
+        .input-group input::placeholder {
+            color: var(--text-muted);
+            font-weight: 300;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            /* Sem sombra de foco */
+        }
+
+        .input-group select {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg fill="%23A0A0A0" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+            background-repeat: no-repeat;
+            background-position-x: calc(100% - 15px);
+            background-position-y: 50%;
+        }
+
+        #transporte {
+            background-color: var(--dark-bg);
+        }
+
+        /* Botão Minimalista */
+        button {
+            cursor: pointer;
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            background-color: var(--primary-color);
+            color: var(--dark-bg);
+            border: none;
+            border-radius: 4px;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            /* Removendo a maioria dos efeitos visuais */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            background-color: #00D28B;
+            /* Tom ligeiramente mais escuro no hover */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Mapa Minimalista */
+        #map {
+            height: 600px;
+            width: 100%;
+            border: 1px solid var(--text-muted);
+            /* Borda simples */
+            border-radius: 4px;
+            box-shadow: none;
+            /* Sem sombras grandes */
+        }
+
+        /* Card de Informações */
+        .info-card {
+            background-color: transparent;
+            border: none;
+            border-left: 4px solid var(--primary-color);
+            /* Linha de destaque */
+            padding: 15px 20px;
+            /* Padding reduzido */
+            margin-top: 25px;
+            text-align: left;
+            box-shadow: none;
+            animation: fadeIn 0.8s ease-out;
+            display: none;
+        }
+
+        .info-card p {
+            margin: 5px 0;
+            font-size: 1rem;
+            color: var(--text-light);
+        }
+
+        .info-card strong {
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        /* Link para Google Maps */
+        a.mapa-link {
+            display: inline-block;
+            margin-top: 25px;
+            padding: 10px 20px;
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        a.mapa-link:hover {
+            background-color: var(--primary-color);
+            color: var(--dark-bg);
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Estilos do Loader (Rodinha) */
+        .loader {
+            border: 4px solid rgba(152, 0, 0, 0.3);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: none; /* Inicia oculto */
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                padding: 15px 20px;
+                gap: 10px;
+            }
+
+            main {
+                padding-top: 100px;
+            }
+        }
+
+        footer {
+            background-color: #111111;
+            color: #EEEEEE; 
+            padding: 25px 0;
+            width: 100%;
+            margin-top: auto;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.7); 
+            text-align: center;
+        }
+        
+        footer p {
+            margin: 0;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                padding: 20px;
+                gap: 15px;
+            }
+
+            main { padding-top: 150px; }
+            .contact-container { padding: 25px; }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <a href="Fluxiainicio.html" class="logo">FluxIA</a>
+        <nav>   
+            <a href="Fluxiainicio.html">Inicio</a>
+            <a href="calcular rotas.html">Calcular Rota</a>
+            <a href="estoque.html">Sistema de Estoque</a>
+            <a href="loja.html">Loja</a>
+            <a href="contato.html" class="contact-btn">Contato</a>
+
+        </nav>
+    </header>
+
+    <main>
+        <div class="layout-container">
+            <div class="rota-form">
+                <h1>Roteirizador Inteligente</h1>
+                <div class="input-group">
+                    <input id="origem" type="text" placeholder="Endereço de origem">
+                    <input id="destino" type="text" placeholder="Endereço de destino">
+                    <select id="transporte">
+                        <option value="driving-car">Carro</option>
+                        <option value="driving-hgv">Veículo Pesado</option>
+                        <option value="cycling-regular">Bicicleta</option>
+                        <option value="foot-walking">A pé</option>
+                    </select>
+                </div>
+                <button id="calcularBtn" onclick="calcularRota()">
+                    Calcular Rota
+                    <div id="loader" class="loader"></div>
+                </button>
+                <div id="info" class="info-card"></div>
+                <div id="link-maps"></div>
+            </div>
+            <div id="map"></div>
+        </div>
+    </main>
+    <footer>
+        <p>© 2025 FluxIA. Todos os direitos reservados.</p>
+    </footer>
+
+    <script>
+        const API_KEY = '5b3ce3597851110001cf62483a51d82e529d4163b51e41fe65a09b86';
+
+        let map = L.map('map').setView([-23.5617, -46.6559], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        let rotaLayer;
+        let infoCard = document.getElementById("info");
+
+        // Novos elementos para o loader e botão
+        const calcularBtn = document.getElementById('calcularBtn');
+        const loader = document.getElementById('loader');
+
+        // Funções para gerenciar o estado do carregamento
+        function mostrarCarregamento() {
+            calcularBtn.disabled = true; // Desabilita o botão para evitar cliques duplos
+            loader.style.display = 'block'; // Mostra o spinner
+            calcularBtn.childNodes[0].nodeValue = 'Calculando...'; // Altera o texto do botão
+        }
+
+        function esconderCarregamento() {
+            calcularBtn.disabled = false; // Habilita o botão
+            loader.style.display = 'none'; // Oculta o spinner
+            calcularBtn.childNodes[0].nodeValue = 'Calcular Rota'; // Restaura o texto do botão
+        }
+
+
+        async function obterCoordenadas(endereco) {
+            const url = `https://api.openrouteservice.org/geocode/search?api_key=${API_KEY}&text=${encodeURIComponent(endereco)}`;
+            const resposta = await fetch(url);
+            const dados = await resposta.json();
+            if (dados.features && dados.features.length > 0) {
+                return dados.features[0].geometry.coordinates.reverse();
+            } else {
+                throw new Error("Endereço não encontrado.");
+            }
+        }
+
+        async function calcularRota() {
+            const origem = document.getElementById('origem').value;
+            const destino = document.getElementById('destino').value;
+            const transporte = document.getElementById('transporte').value;
+
+            if (!origem || !destino) {
+                alert('Por favor, preencha os dois endereços.');
+                return;
+            }
+
+            mostrarCarregamento(); // Mostra o loader no início do cálculo
+
+            try {
+                const coordOrigem = await obterCoordenadas(origem);
+                const coordDestino = await obterCoordenadas(destino);
+
+                const body = {
+                    coordinates: [coordOrigem.slice().reverse(), coordDestino.slice().reverse()]
+                };
+
+                const resposta = await fetch(`https://api.openrouteservice.org/v2/directions/${transporte}/geojson`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': API_KEY,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                const rota = await resposta.json();
+
+                if (rotaLayer) map.removeLayer(rotaLayer);
+                rotaLayer = L.geoJSON(rota, {
+                    style: {
+                        color: '#00F8A5',
+                        weight: 4, // Peso da linha reduzido para minimalismo
+                        opacity: 0.9
+                    }
+                }).addTo(map);
+                map.fitBounds(rotaLayer.getBounds());
+
+                const metros = rota.features[0].properties.summary.distance;
+                const minutos = rota.features[0].properties.summary.duration / 60;
+
+                infoCard.innerHTML = `
+                    <p>Distância: <strong>${(metros / 1000).toFixed(2)} km</strong></p>
+                    <p>Tempo estimado: <strong>${minutos.toFixed(1)} min</strong></p>
+                `;
+                infoCard.style.display = 'block';
+
+                // Corrigindo o link do Google Maps para o formato correto
+                const mapsURL = `https://www.google.com/maps/dir/${encodeURIComponent(origem)}/${encodeURIComponent(destino)}/data=!4m2!4m1!3e${getGoogleTravelModeCode(transporte)}`;
+                document.getElementById("link-maps").innerHTML = `
+                    <a class="mapa-link" href="${mapsURL}" target="_blank">Abrir no Google Maps</a>
+                `;
+
+            } catch (erro) {
+                console.error(erro);
+                alert("Erro ao calcular a rota. Verifique os endereços e a chave API.");
+            } finally {
+                esconderCarregamento(); // Esconde o loader, independente do resultado
+            }
+        }
+
+        function getGoogleTravelModeCode(modoORS) {
+            switch (modoORS) {
+                case 'foot-walking':
+                    return '2'; // Walking
+                case 'cycling-regular':
+                    return '1'; // Bicycling
+                case 'driving-car':
+                case 'driving-hgv':
+                    return '0'; // Driving
+                default:
+                    return '0';
+            }
+        }
+    </script>
+</body>
+
+</html>

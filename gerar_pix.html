@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador Pix - Lucas Martins Oliveira</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; max-width: 350px; width: 100%; }
+        h2 { color: #32BCAD; margin-bottom: 5px; }
+        .info { font-size: 14px; color: #555; margin-bottom: 20px; }
+        input { padding: 10px; border: 1px solid #ddd; border-radius: 5px; width: 80%; margin-bottom: 15px; text-align: center; font-size: 16px; }
+        button { background-color: #32BCAD; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 16px; cursor: pointer; width: 100%; transition: background 0.3s; }
+        button:hover { background-color: #289a8e; }
+        #qrcode-container { margin: 20px 0; display: flex; justify-content: center; }
+        .copy-area { background: #f9f9f9; padding: 10px; border-radius: 5px; word-break: break-all; font-family: monospace; font-size: 12px; color: #333; margin-bottom: 10px; display: none; }
+        .btn-copy { background-color: #444; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Pix de Lucas</h2>
+    <div class="info">
+        <p><strong>Nome:</strong> Lucas Martins Oliveira</p>
+        <p><strong>Cidade:</strong> São Bernardo do Campo</p>
+        <p><strong>Chave:</strong> (11) 93204-7878</p>
+    </div>
+
+    <label for="valor">Valor (Opcional):</label>
+    <input type="number" id="valor" placeholder="Ex: 50.00 (Deixe vazio p/ livre)" step="0.01">
+
+    <button onclick="gerarPix()">Gerar QR Code</button>
+
+    <div id="qrcode-container">
+        <canvas id="qr"></canvas>
+    </div>
+
+    <div id="resultado" style="display:none;">
+        <p style="font-size: 12px; font-weight: bold;">Código Copia e Cola:</p>
+        <div class="copy-area" id="brcode"></div>
+        <button class="btn-copy" onclick="copiarCodigo()">Copiar Código</button>
+    </div>
+</div>
+
+<script>
+    // --- DADOS FIXOS DO USUÁRIO ---
+    const chavePix = "11932047878"; // Apenas números
+    const nomeBeneficiario = "Lucas Martins Oliveira";
+    const cidadeBeneficiario = "Sao Bernardo do Campo"; // Sem acentos é mais seguro
+    
+    function gerarPix() {
+        const valorInput = document.getElementById('valor').value;
+        const valor = valorInput ? parseFloat(valorInput).toFixed(2) : null;
+
+        const payload = montarPayload(chavePix, nomeBeneficiario, cidadeBeneficiario, valor);
+
+        // Exibir Código
+        document.getElementById('brcode').innerText = payload;
+        document.getElementById('resultado').style.display = 'block';
+
+        // Gerar Imagem QR Code
+        new QRious({
+            element: document.getElementById('qr'),
+            value: payload,
+            size: 200,
+            level: 'M' // Nível de correção de erro
+        });
+    }
+
+    function copiarCodigo() {
+        const codigo = document.getElementById('brcode').innerText;
+        navigator.clipboard.writeText(codigo).then(() => {
+            alert("Código Pix copiado para a área de transferência!");
+        });
+    }
+
+    // --- LÓGICA DO PADRÃO EMVCO (Técnica) ---
+    function montarPayload(chave, nome, cidade, valor) {
+        const chaveFormatada = "+55" + chave; 
+        
+        // Remove acentos e caracteres especiais para evitar erro no banco
+        const nomeTratado = nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 25);
+        const cidadeTratada = cidade.normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 15);
+
+        let payload = "000201"; // Payload Format + Merchant Account Info
+        payload += formatarCampo("26", "0014BR.GOV.BCB.PIX" + formatarCampo("01", chaveFormatada));
+        payload += "52040000"; // Merchant Category Code
+        payload += "5303986";  // Moeda (BRL)
+        
+        if (valor) {
+            payload += formatarCampo("54", valor);
+        }
+
+        payload += "5802BR"; // País
+        payload += formatarCampo("59", nomeTratado); // Nome
+        payload += formatarCampo("60", cidadeTratada); // Cidade
+        payload += formatarCampo("62", formatarCampo("05", "***")); // TxID
+
+        payload += "6304"; // ID do CRC16
+
+        // Calcula CRC16
+        const crc = crc16ccitt(payload);
+        return payload + crc;
+    }
+
+    function formatarCampo(id, valor) {
+        const len = valor.length.toString().padStart(2, '0');
+        return id + len + valor;
+    }
+
+    // Algoritmo CRC16-CCITT (0xFFFF) exigido pelo Pix
+    function crc16ccitt(payload) {
+        let crc = 0xFFFF;
+        const polynomial = 0x1021;
+
+        for (let i = 0; i < payload.length; i++) {
+            crc ^= (payload.charCodeAt(i) << 8);
+            for (let j = 0; j < 8; j++) {
+                if ((crc & 0x8000) !== 0) {
+                    crc = (crc << 1) ^ polynomial;
+                } else {
+                    crc = crc << 1;
+                }
+            }
+        }
+        return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+    }
+</script>
+
+</body>
+</html>
